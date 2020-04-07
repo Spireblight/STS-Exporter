@@ -88,7 +88,7 @@ class ExportHelper {
 
     // Export all collected items
     void exportAll() {
-        exportAllTemplates();
+//        exportAllTemplates();
         if (render_images) {
             exportAllImages();
         }
@@ -290,6 +290,12 @@ class ExportHelper {
         resized.setFilter(Pixmap.Filter.BiLinear);
         resized.drawPixmap(pixmap, 0,0,pixmap.getWidth(),pixmap.getHeight(), 0,0,width,height);
         return resized;
+    }
+
+    public static Pixmap cropPixmap(Pixmap pixmap, int x, int y, int width, int height) {
+        Pixmap cropped = new Pixmap(width, height, Pixmap.Format.RGBA8888);
+        cropped.drawPixmap(pixmap, x, y, width, height, 0, 0, width, height);
+        return cropped;
     }
 
     // ----------------------------------------------------------------------------

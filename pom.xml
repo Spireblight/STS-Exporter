@@ -8,33 +8,43 @@
   <name>SpireExporter</name>
   <description>Exports Slay the Spire card images, relics, potions, creatures and other data to HTML</description>
 
+  <properties>
+    <SlayTheSpire.version>01-23-2019</SlayTheSpire.version>
+    <ModTheSpire.version>3.8.0</ModTheSpire.version>
+    <!--CHANGE THIS TO YOUR STEAM INSTALLATION-->
+    <Steam.path>E:/Gaming/SteamLibrary/steamapps</Steam.path>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.megacrit.cardcrawl</groupId>
       <artifactId>slaythespire</artifactId>
-      <version>016</version>
+      <version>${SlayTheSpire.version}</version>
       <scope>system</scope>
-      <systemPath>${basedir}/../_ModTheSpire/desktop-1.0.jar</systemPath>
+      <systemPath>${Steam.path}/common/SlayTheSpire/desktop-1.0.jar</systemPath>
+      <!--<systemPath>${basedir}/../lib/desktop-1.0.jar</systemPath>-->
+    </dependency>
+    <dependency>
+      <groupId>com.evacipated.cardcrawl</groupId>
+      <artifactId>modthespire</artifactId>
+      <version>${ModTheSpire.version}</version>
+      <scope>system</scope>
+      <systemPath>${Steam.path}/workshop/content/646570/1605060445/ModTheSpire.jar</systemPath>
+      <!--<systemPath>${basedir}/../lib/ModTheSpire.jar</systemPath>-->
+    </dependency>
+    <dependency>
+      <groupId>basemod</groupId>
+      <artifactId>basemod</artifactId>
+      <version>5.0.0</version>
+      <scope>system</scope>
+      <systemPath>${Steam.path}/workshop/content/646570/1605833019/BaseMod.jar</systemPath>
+      <!--<systemPath>${basedir}/../lib/BaseMod.jar</systemPath>-->
     </dependency>
     <dependency>
       <groupId>org.jtwig</groupId>
       <artifactId>jtwig-core</artifactId>
-      <version>5.85.0.RELEASE</version>
+      <version>5.87.0.RELEASE</version>
       <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>basemod</groupId>
-      <artifactId>BaseMod</artifactId>
-      <version>1.6.5</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/../_ModTheSpire/mods/BaseMod.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>modthespire</groupId>
-      <artifactId>ModTheSpire</artifactId>
-      <version>2.4.0</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/../_ModTheSpire/ModTheSpire.jar</systemPath>
     </dependency>
   </dependencies>
 
@@ -104,7 +114,7 @@
             <phase>package</phase>
             <configuration>
               <target>
-                <copy file="target/StSExporter-jar-with-dependencies.jar" tofile="../_ModTheSpire/mods/StSExporter.jar"/>
+                <copy file="target/StSExporter-jar-with-dependencies.jar" tofile="${Steam.path}/common/SlayTheSpire/mods/${project.artifactId}.jar"/>
               </target>
             </configuration>
             <goals>

@@ -1,5 +1,6 @@
 package sts_exporter;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +32,8 @@ public class CardExportData implements Comparable<CardExportData> {
     public String text, textAndUpgrade, textWikiData, textWikiFormat;
     public int block, damage, magicNumber;
     public ModExportData mod;
+
+    private static final float OUTPUT_SCALE = 0.5f;
 
     public CardExportData(ExportHelper export, AbstractCard card) {
         this(export, card, true);
@@ -96,12 +99,15 @@ public class CardExportData implements Comparable<CardExportData> {
     }
 
     public void exportImages() {
-        this.image.mkdir();
-        this.smallImage.mkdir();
-        exportImageToFile();
-        if (upgrade != null) {
-            upgrade.exportImages();
-        }
+//        this.image.mkdir();
+//        this.smallImage.mkdir();
+//        exportImageToFile();
+        exportBackgroundToFile();
+        exportFrameToFile();
+        exportPortraitToFile();
+//        if (upgrade != null) {
+//            upgrade.exportImages();
+//        }
     }
 
     private void exportImageToFile() {
@@ -142,6 +148,131 @@ public class CardExportData implements Comparable<CardExportData> {
             Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, 231, 298);
             PixmapIO.writePNG(Gdx.files.local(smallImage.absolute), smallPixmap);
             smallPixmap.dispose();
+        });
+        SingleCardViewPopup.enableUpgradeToggle = true;
+        scv.close();
+    }
+
+    private void exportBackgroundToFile() {
+
+        String path = SlayTheRelicsExportHelper.getBackgroundPath(card.color, card.type);
+
+        if (SlayTheRelicsExportHelper.fileExists(path)) {
+            return;
+        }
+
+        SlayTheRelicsExportHelper.makeDirs(path);
+
+        Exporter.logger.info("Rendering background image to " + path);
+//        Exporter.logger.info("Rendering card image to " + image.absolute);
+        // Use SingleCardViewPopup, to get better image and better fonts.
+        card.isLocked = false;
+        card.isSeen = true;
+        SingleCardViewPopup scv = CardCrawlGame.cardPopup;
+        scv.open(card);
+        SingleCardViewPopup.isViewingUpgrade = card.upgraded;
+        SingleCardViewPopup.enableUpgradeToggle = false;
+        // get hitbox
+        Hitbox cardHb = (Hitbox)ReflectionHacks.getPrivate(CardCrawlGame.cardPopup, SingleCardViewPopup.class, "cardHb");
+        float lpadding = 64.0f * Settings.scale;
+        float rpadding = 64.0f * Settings.scale;
+        float tpadding = 64.0f * Settings.scale;
+        float bpadding = 40.0f * Settings.scale;
+        // Note: We would like to use a scale=1/Settings.scale, but that doesn't actually work, since fonts are initialized at startup using Settings.scale
+        // Note2: y is up instead of down, so use y-bpadding
+        ExportHelper.renderSpriteBatchToPixmap(cardHb.x-lpadding, cardHb.y-bpadding, cardHb.width+lpadding+rpadding, cardHb.height+tpadding+bpadding, 1.0f, (SpriteBatch sb) -> {
+            // We can't just call
+            //CardCrawlGame.cardPopup.render(sb);
+            // because that also draws a UI
+            callPrivate(scv, SingleCardViewPopup.class, "renderCardBack", SpriteBatch.class, sb);
+        }, (Pixmap pixmap) -> {
+            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, (int) (pixmap.getWidth() * OUTPUT_SCALE), (int) (pixmap.getHeight() * OUTPUT_SCALE));
+            PixmapIO.writePNG(Gdx.files.local(path), smallPixmap);
+            smallPixmap.dispose();
+        });
+        SingleCardViewPopup.enableUpgradeToggle = true;
+        scv.close();
+    }
+
+    private void exportFrameToFile() {
+
+        String path = SlayTheRelicsExportHelper.getForegroundPath(card.color, card.type, card.rarity);;
+
+        if (SlayTheRelicsExportHelper.fileExists(path)) {
+            return;
+        }
+
+        SlayTheRelicsExportHelper.makeDirs(path);
+
+        Exporter.logger.info("Rendering frame image to " + path);
+        // Use SingleCardViewPopup, to get better image and better fonts.
+        card.isLocked = false;
+        card.isSeen = true;
+        SingleCardViewPopup scv = CardCrawlGame.cardPopup;
+        scv.open(card);
+        SingleCardViewPopup.isViewingUpgrade = card.upgraded;
+        SingleCardViewPopup.enableUpgradeToggle = false;
+        // get hitbox
+        Hitbox cardHb = (Hitbox)ReflectionHacks.getPrivate(CardCrawlGame.cardPopup, SingleCardViewPopup.class, "cardHb");
+        float lpadding = 64.0f * Settings.scale;
+        float rpadding = 64.0f * Settings.scale;
+        float tpadding = 64.0f * Settings.scale;
+        float bpadding = 40.0f * Settings.scale;
+        // Note: We would like to use a scale=1/Settings.scale, but that doesn't actually work, since fonts are initialized at startup using Settings.scale
+        // Note2: y is up instead of down, so use y-bpadding
+        ExportHelper.renderSpriteBatchToPixmap(cardHb.x-lpadding, cardHb.y-bpadding, cardHb.width+lpadding+rpadding, cardHb.height+tpadding+bpadding, 1.0f, (SpriteBatch sb) -> {
+            // We can't just call
+            //CardCrawlGame.cardPopup.render(sb);
+            // because that also draws a UI
+            callPrivate(scv, SingleCardViewPopup.class, "renderFrame", SpriteBatch.class, sb);
+            callPrivate(scv, SingleCardViewPopup.class, "renderCardBanner", SpriteBatch.class, sb);
+            callPrivate(scv, SingleCardViewPopup.class, "renderCardTypeText", SpriteBatch.class, sb);
+            ((AbstractCard) ReflectionHacks.getPrivate(scv, scv.getClass(), "card")).cost = -2;
+            callPrivate(scv, SingleCardViewPopup.class, "renderCost", SpriteBatch.class, sb);
+        }, (Pixmap pixmap) -> {
+            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, (int) (pixmap.getWidth() * OUTPUT_SCALE), (int) (pixmap.getHeight() * OUTPUT_SCALE));
+            PixmapIO.writePNG(Gdx.files.local(path), smallPixmap);
+            smallPixmap.dispose();
+        });
+        SingleCardViewPopup.enableUpgradeToggle = true;
+        scv.close();
+    }
+
+    private void exportPortraitToFile() {
+
+        String path = SlayTheRelicsExportHelper.getPortraitPath(card.color, card.cardID);
+
+        SlayTheRelicsExportHelper.makeDirs(path);
+
+        Exporter.logger.info("Rendering portrait image to " + path);
+        // Use SingleCardViewPopup, to get better image and better fonts.
+        card.isLocked = false;
+        card.isSeen = true;
+        SingleCardViewPopup scv = CardCrawlGame.cardPopup;
+        scv.open(card);
+        SingleCardViewPopup.isViewingUpgrade = card.upgraded;
+        SingleCardViewPopup.enableUpgradeToggle = false;
+        // get hitbox
+        Hitbox cardHb = (Hitbox)ReflectionHacks.getPrivate(CardCrawlGame.cardPopup, SingleCardViewPopup.class, "cardHb");
+        float lpadding = 64.0f * Settings.scale;
+        float rpadding = 64.0f * Settings.scale;
+        float tpadding = 64.0f * Settings.scale;
+        float bpadding = 40.0f * Settings.scale;
+        // Note: We would like to use a scale=1/Settings.scale, but that doesn't actually work, since fonts are initialized at startup using Settings.scale
+        // Note2: y is up instead of down, so use y-bpadding
+        ExportHelper.renderSpriteBatchToPixmap(cardHb.x-lpadding, cardHb.y-bpadding, cardHb.width+lpadding+rpadding, cardHb.height+tpadding+bpadding, 1.0f, (SpriteBatch sb) -> {
+            // We can't just call
+            //CardCrawlGame.cardPopup.render(sb);
+            // because that also draws a UI
+            callPrivate(scv, SingleCardViewPopup.class, "renderPortrait", SpriteBatch.class, sb);
+
+        }, (Pixmap pixmap) -> {
+
+            Pixmap croppedPixmap = ExportHelper.cropPixmap(pixmap, 89, 124, 500, 380);
+            Pixmap smallPixmap = ExportHelper.resizePixmap(croppedPixmap, (int) (croppedPixmap.getWidth() * OUTPUT_SCALE), (int) (croppedPixmap.getHeight() * OUTPUT_SCALE));
+            PixmapIO.writePNG(Gdx.files.local(path), smallPixmap);
+            smallPixmap.dispose();
+            croppedPixmap.dispose();
         });
         SingleCardViewPopup.enableUpgradeToggle = true;
         scv.close();
