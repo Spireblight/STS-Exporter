@@ -1,5 +1,6 @@
 package sts_exporter;
 
+import basemod.patches.whatmod.WhatMod;
 import com.megacrit.cardcrawl.cards.AbstractCard;
 
 import javax.imageio.IIOImage;
@@ -30,22 +31,42 @@ public class SlayTheRelicsExportHelper {
         foregrounds = new ArrayList<>();
     }
 
-    public static String getBackgroundPath(AbstractCard.CardColor color, AbstractCard.CardType type) {
-        return String.format("export/str/img/cards/%s/background_%s.png", color.toString(), type.toString());
+    private static String getModFolder(AbstractCard card) {
+        String modName = WhatMod.findModName(card.getClass());
+
+        if (modName == null) {
+            modName = "basegame";
+        }
+
+        return sanitizeFilename(modName);
     }
 
-    public static String getForegroundPath(AbstractCard.CardColor color, AbstractCard.CardType type, AbstractCard.CardRarity rarity) {
-        return String.format("export/str/img/cards/%s/frame_%s_%s.png", color.toString(), type.toString(), rarity.toString());
+    public static String getBackgroundPath(AbstractCard card) {
+        return String.format("export/str/img/cards/%s/%s/background_%s.png", getModFolder(card), card.color.toString(), card.type.toString());
     }
 
-    public static String getPortraitPath(AbstractCard.CardColor color, String cardId) {
+    public static String getForegroundPath(AbstractCard card) {
+        return String.format("export/str/img/cards/%s/%s/frame_%s_%s.png", getModFolder(card), card.color.toString(), card.type.toString(), card.rarity.toString());
+    }
+
+    public static String getEnergyOrbPath(AbstractCard card) {
+        return String.format("export/str/img/cards/%s/%s/energy_orb.png", getModFolder(card), card.color.toString());
+    }
+
+    private static String sanitizeFilename(String name) {
+        return name.replaceAll("[\\\\/:*?\"<>|]", "_");
+    }
+
+    public static String getPortraitPath(AbstractCard card) {
         String name = "";
-        if (cardId.contains(":"))
-            name = cardId.split(":", 2)[1];
+        if (card.name.contains(":"))
+            name = card.name.split(":", 2)[1];
         else
-            name = cardId;
+            name = card.name;
 
-        return String.format("export/str/img/cards/%s/portraits/%s.png", color.toString(), name);
+        name = sanitizeFilename(name);
+
+        return String.format("export/str/img/cards/%s/%s/portraits/%s.png", getModFolder(card), card.color.toString(), name);
     }
 
     public static boolean fileExists(String path) {

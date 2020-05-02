@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
 
+import basemod.patches.whatmod.WhatMod;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
@@ -33,7 +34,7 @@ public class CardExportData implements Comparable<CardExportData> {
     public int block, damage, magicNumber;
     public ModExportData mod;
 
-    private static final float OUTPUT_SCALE = 0.5f;
+    private static final float OUTPUT_SCALE = 1.0f;
 
     public CardExportData(ExportHelper export, AbstractCard card) {
         this(export, card, true);
@@ -99,63 +100,15 @@ public class CardExportData implements Comparable<CardExportData> {
     }
 
     public void exportImages() {
-//        this.image.mkdir();
-//        this.smallImage.mkdir();
-//        exportImageToFile();
         exportBackgroundToFile();
         exportFrameToFile();
+        exportEnergyOrbToFile();
         exportPortraitToFile();
-//        if (upgrade != null) {
-//            upgrade.exportImages();
-//        }
-    }
-
-    private void exportImageToFile() {
-        Exporter.logger.info("Rendering card image to " + image.absolute);
-        // Use SingleCardViewPopup, to get better image and better fonts.
-        card.isLocked = false;
-        card.isSeen = true;
-        SingleCardViewPopup scv = CardCrawlGame.cardPopup;
-        scv.open(card);
-        SingleCardViewPopup.isViewingUpgrade = card.upgraded;
-        SingleCardViewPopup.enableUpgradeToggle = false;
-        // get hitbox
-        Hitbox cardHb = (Hitbox)ReflectionHacks.getPrivate(CardCrawlGame.cardPopup, SingleCardViewPopup.class, "cardHb");
-        float lpadding = 64.0f * Settings.scale;
-        float rpadding = 64.0f * Settings.scale;
-        float tpadding = 64.0f * Settings.scale;
-        float bpadding = 40.0f * Settings.scale;
-        // Note: We would like to use a scale=1/Settings.scale, but that doesn't actually work, since fonts are initialized at startup using Settings.scale
-        // Note2: y is up instead of down, so use y-bpadding
-        ExportHelper.renderSpriteBatchToPixmap(cardHb.x-lpadding, cardHb.y-bpadding, cardHb.width+lpadding+rpadding, cardHb.height+tpadding+bpadding, 1.0f, (SpriteBatch sb) -> {
-            // We can't just call
-            //CardCrawlGame.cardPopup.render(sb);
-            // because that also draws a UI
-            callPrivate(scv, SingleCardViewPopup.class, "renderCardBack", SpriteBatch.class, sb);
-            callPrivate(scv, SingleCardViewPopup.class, "renderPortrait", SpriteBatch.class, sb);
-            callPrivate(scv, SingleCardViewPopup.class, "renderFrame", SpriteBatch.class, sb);
-            callPrivate(scv, SingleCardViewPopup.class, "renderCardBanner", SpriteBatch.class, sb);
-            callPrivate(scv, SingleCardViewPopup.class, "renderCardTypeText", SpriteBatch.class, sb);
-            if (Settings.lineBreakViaCharacter) {
-                callPrivate(scv, SingleCardViewPopup.class, "renderDescriptionCN", SpriteBatch.class, sb);
-            } else {
-                callPrivate(scv, SingleCardViewPopup.class, "renderDescription", SpriteBatch.class, sb);
-            }
-            callPrivate(scv, SingleCardViewPopup.class, "renderTitle", SpriteBatch.class, sb);
-            callPrivate(scv, SingleCardViewPopup.class, "renderCost", SpriteBatch.class, sb);
-        }, (Pixmap pixmap) -> {
-            PixmapIO.writePNG(Gdx.files.local(image.absolute), pixmap);
-            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, 231, 298);
-            PixmapIO.writePNG(Gdx.files.local(smallImage.absolute), smallPixmap);
-            smallPixmap.dispose();
-        });
-        SingleCardViewPopup.enableUpgradeToggle = true;
-        scv.close();
     }
 
     private void exportBackgroundToFile() {
 
-        String path = SlayTheRelicsExportHelper.getBackgroundPath(card.color, card.type);
+        String path = SlayTheRelicsExportHelper.getBackgroundPath(card);
 
         if (SlayTheRelicsExportHelper.fileExists(path)) {
             return;
@@ -181,12 +134,10 @@ public class CardExportData implements Comparable<CardExportData> {
         // Note: We would like to use a scale=1/Settings.scale, but that doesn't actually work, since fonts are initialized at startup using Settings.scale
         // Note2: y is up instead of down, so use y-bpadding
         ExportHelper.renderSpriteBatchToPixmap(cardHb.x-lpadding, cardHb.y-bpadding, cardHb.width+lpadding+rpadding, cardHb.height+tpadding+bpadding, 1.0f, (SpriteBatch sb) -> {
-            // We can't just call
-            //CardCrawlGame.cardPopup.render(sb);
-            // because that also draws a UI
             callPrivate(scv, SingleCardViewPopup.class, "renderCardBack", SpriteBatch.class, sb);
         }, (Pixmap pixmap) -> {
-            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, (int) (pixmap.getWidth() * OUTPUT_SCALE), (int) (pixmap.getHeight() * OUTPUT_SCALE));
+            float scale = WhatMod.findModName(card.getClass()) == null ? 1f * OUTPUT_SCALE : 0.5f * OUTPUT_SCALE;
+            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, (int) (pixmap.getWidth() * scale), (int) (pixmap.getHeight() * scale));
             PixmapIO.writePNG(Gdx.files.local(path), smallPixmap);
             smallPixmap.dispose();
         });
@@ -196,7 +147,7 @@ public class CardExportData implements Comparable<CardExportData> {
 
     private void exportFrameToFile() {
 
-        String path = SlayTheRelicsExportHelper.getForegroundPath(card.color, card.type, card.rarity);;
+        String path = SlayTheRelicsExportHelper.getForegroundPath(card);;
 
         if (SlayTheRelicsExportHelper.fileExists(path)) {
             return;
@@ -221,16 +172,60 @@ public class CardExportData implements Comparable<CardExportData> {
         // Note: We would like to use a scale=1/Settings.scale, but that doesn't actually work, since fonts are initialized at startup using Settings.scale
         // Note2: y is up instead of down, so use y-bpadding
         ExportHelper.renderSpriteBatchToPixmap(cardHb.x-lpadding, cardHb.y-bpadding, cardHb.width+lpadding+rpadding, cardHb.height+tpadding+bpadding, 1.0f, (SpriteBatch sb) -> {
-            // We can't just call
-            //CardCrawlGame.cardPopup.render(sb);
-            // because that also draws a UI
             callPrivate(scv, SingleCardViewPopup.class, "renderFrame", SpriteBatch.class, sb);
             callPrivate(scv, SingleCardViewPopup.class, "renderCardBanner", SpriteBatch.class, sb);
             callPrivate(scv, SingleCardViewPopup.class, "renderCardTypeText", SpriteBatch.class, sb);
-            ((AbstractCard) ReflectionHacks.getPrivate(scv, scv.getClass(), "card")).cost = -2;
-            callPrivate(scv, SingleCardViewPopup.class, "renderCost", SpriteBatch.class, sb);
         }, (Pixmap pixmap) -> {
-            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, (int) (pixmap.getWidth() * OUTPUT_SCALE), (int) (pixmap.getHeight() * OUTPUT_SCALE));
+            float scale = WhatMod.findModName(card.getClass()) == null ? 1f * OUTPUT_SCALE : 0.5f * OUTPUT_SCALE;
+            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, (int) (pixmap.getWidth() * scale), (int) (pixmap.getHeight() * scale));
+            PixmapIO.writePNG(Gdx.files.local(path), smallPixmap);
+            smallPixmap.dispose();
+        });
+        SingleCardViewPopup.enableUpgradeToggle = true;
+        scv.close();
+    }
+
+    private void exportEnergyOrbToFile() {
+
+        String path = SlayTheRelicsExportHelper.getEnergyOrbPath(card);;
+
+        if (SlayTheRelicsExportHelper.fileExists(path)) {
+            return;
+        }
+
+        SlayTheRelicsExportHelper.makeDirs(path);
+
+        Exporter.logger.info("Rendering energy orb to " + path);
+        // Use SingleCardViewPopup, to get better image and better fonts.
+        card.isLocked = false;
+        card.isSeen = true;
+        SingleCardViewPopup scv = CardCrawlGame.cardPopup;
+        scv.open(card);
+        SingleCardViewPopup.isViewingUpgrade = card.upgraded;
+        SingleCardViewPopup.enableUpgradeToggle = false;
+        // get hitbox
+        Hitbox cardHb = (Hitbox)ReflectionHacks.getPrivate(CardCrawlGame.cardPopup, SingleCardViewPopup.class, "cardHb");
+        float lpadding = 64.0f * Settings.scale;
+        float rpadding = 64.0f * Settings.scale;
+        float tpadding = 64.0f * Settings.scale;
+        float bpadding = 40.0f * Settings.scale;
+        // Note: We would like to use a scale=1/Settings.scale, but that doesn't actually work, since fonts are initialized at startup using Settings.scale
+        // Note2: y is up instead of down, so use y-bpadding
+        ExportHelper.renderSpriteBatchToPixmap(cardHb.x-lpadding, cardHb.y-bpadding, cardHb.width+lpadding+rpadding, cardHb.height+tpadding+bpadding, 1.0f, (SpriteBatch sb) -> {
+            // We can't just call
+            //CardCrawlGame.cardPopup.render(sb);
+            // because that also draws a UI
+//            callPrivate(scv, SingleCardViewPopup.class, "renderFrame", SpriteBatch.class, sb);
+//            callPrivate(scv, SingleCardViewPopup.class, "renderCardBanner", SpriteBatch.class, sb);
+//            callPrivate(scv, SingleCardViewPopup.class, "renderCardTypeText", SpriteBatch.class, sb);
+            AbstractCard card = ((AbstractCard) ReflectionHacks.getPrivate(scv, scv.getClass(), "card"));
+            int cost = card.cost;
+            card.cost = 1;
+            callPrivate(scv, SingleCardViewPopup.class, "renderCost", SpriteBatch.class, sb);
+            card.cost = cost;
+        }, (Pixmap pixmap) -> {
+            float scale = WhatMod.findModName(card.getClass()) == null ? 1f * OUTPUT_SCALE : 0.5f * OUTPUT_SCALE;
+            Pixmap smallPixmap = ExportHelper.resizePixmap(pixmap, (int) (pixmap.getWidth() * scale), (int) (pixmap.getHeight() * scale));
             PixmapIO.writePNG(Gdx.files.local(path), smallPixmap);
             smallPixmap.dispose();
         });
@@ -240,7 +235,7 @@ public class CardExportData implements Comparable<CardExportData> {
 
     private void exportPortraitToFile() {
 
-        String path = SlayTheRelicsExportHelper.getPortraitPath(card.color, card.cardID);
+        String path = SlayTheRelicsExportHelper.getPortraitPath(card);
 
         SlayTheRelicsExportHelper.makeDirs(path);
 
@@ -268,30 +263,15 @@ public class CardExportData implements Comparable<CardExportData> {
 
         }, (Pixmap pixmap) -> {
 
+            float scale = WhatMod.findModName(card.getClass()) == null ? 1f * OUTPUT_SCALE : 0.5f * OUTPUT_SCALE;
             Pixmap croppedPixmap = ExportHelper.cropPixmap(pixmap, 89, 124, 500, 380);
-            Pixmap smallPixmap = ExportHelper.resizePixmap(croppedPixmap, (int) (croppedPixmap.getWidth() * OUTPUT_SCALE), (int) (croppedPixmap.getHeight() * OUTPUT_SCALE));
+            Pixmap smallPixmap = ExportHelper.resizePixmap(croppedPixmap, (int) (croppedPixmap.getWidth() * scale), (int) (croppedPixmap.getHeight() * scale));
             PixmapIO.writePNG(Gdx.files.local(path), smallPixmap);
             smallPixmap.dispose();
             croppedPixmap.dispose();
         });
         SingleCardViewPopup.enableUpgradeToggle = true;
         scv.close();
-    }
-
-    private void exportImageToFileLowResolution(String imageFile) {
-        // This is the in-game rendering path
-        // Scale and position of the card
-        // IMG_WIDTH,IMG_HEIGHT are only for the card border, mana cost and rarity banner is outside that, so add some padding.
-        card.drawScale = 1.0f;
-        float width  = (AbstractCard.IMG_WIDTH + 24.0f) * card.drawScale;
-        float height = (AbstractCard.IMG_HEIGHT + 24.0f) * card.drawScale;
-        int iwidth = Math.round(width), iheight = Math.round(height);
-        card.current_x = width/2;
-        card.current_y = height/2;
-        // Render card to png file
-        ExportHelper.renderSpriteBatchToPNG(0,0, width,height, iwidth,iheight, imageFile, (SpriteBatch sb) -> {
-            card.render(sb,false);
-        });
     }
 
     public static Object callPrivate(Object obj, Class<?> objClass, String methodName, Class<?> paramType, Object arg) {

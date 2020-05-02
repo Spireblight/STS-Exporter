@@ -54,36 +54,36 @@ class ExportHelper {
         // collect items
         Exporter.logger.info("Collecting items");
         CardExportData.exportAllCards(this);
-        RelicExportData.exportAllRelics(this);
-        CreatureExportData.exportAllCreatures(this);
-        PotionExportData.exportAllPotions(this);
-        this.colors = ColorExportData.exportAllColors(this);
-        this.keywords = KeywordExportData.exportAllKeywords(this);
+//        RelicExportData.exportAllRelics(this);
+//        CreatureExportData.exportAllCreatures(this);
+//        PotionExportData.exportAllPotions(this);
+//        this.colors = ColorExportData.exportAllColors(this);
+//        this.keywords = KeywordExportData.exportAllKeywords(this);
         // collect only from included mods
         for (ModExportData mod : this.mods) {
             if (modIncludedInExport(mod)) {
                 cards.addAll(mod.cards);
-                relics.addAll(mod.relics);
-                creatures.addAll(mod.creatures);
-                potions.addAll(mod.potions);
+//                relics.addAll(mod.relics);
+//                creatures.addAll(mod.creatures);
+//                potions.addAll(mod.potions);
                 // sort
                 Collections.sort(mod.cards);
-                Collections.sort(mod.relics);
-                Collections.sort(mod.creatures);
-                Collections.sort(mod.potions);
+//                Collections.sort(mod.relics);
+//                Collections.sort(mod.creatures);
+//                Collections.sort(mod.potions);
             }
         }
         Collections.sort(this.cards);
-        Collections.sort(this.relics);
-        Collections.sort(this.creatures);
-        Collections.sort(this.potions);
+//        Collections.sort(this.relics);
+//        Collections.sort(this.creatures);
+//        Collections.sort(this.potions);
         // per color items
-        for (CardExportData c : this.cards) {
-            findColor(c.card.color).cards.add(c);
-        }
-        for (RelicExportData r : this.relics) {
-            if (r.poolColor != null) findColor(r.poolColor).relics.add(r);
-        }
+//        for (CardExportData c : this.cards) {
+//            findColor(c.card.color).cards.add(c);
+//        }
+//        for (RelicExportData r : this.relics) {
+//            if (r.poolColor != null) findColor(r.poolColor).relics.add(r);
+//        }
     }
 
     // Export all collected items
