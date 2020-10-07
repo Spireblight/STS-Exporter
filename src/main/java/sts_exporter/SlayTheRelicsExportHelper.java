@@ -54,7 +54,7 @@ public class SlayTheRelicsExportHelper {
     }
 
     private static String sanitizeFilename(String name) {
-        return name.replaceAll("[\\\\/:*?\"<>|]", "_");
+        return name.replaceAll("[\\\\/:*?\"<>|\\s]", "_");
     }
 
     public static String getPortraitPath(AbstractCard card) {

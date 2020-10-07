@@ -61,16 +61,21 @@ class ExportHelper {
 //        this.keywords = KeywordExportData.exportAllKeywords(this);
         // collect only from included mods
         for (ModExportData mod : this.mods) {
-            if (modIncludedInExport(mod)) {
-                cards.addAll(mod.cards);
+            try {
+                if (modIncludedInExport(mod)) {
+                    cards.addAll(mod.cards);
 //                relics.addAll(mod.relics);
 //                creatures.addAll(mod.creatures);
 //                potions.addAll(mod.potions);
-                // sort
-                Collections.sort(mod.cards);
+                    // sort
+                    Collections.sort(mod.cards);
 //                Collections.sort(mod.relics);
 //                Collections.sort(mod.creatures);
 //                Collections.sort(mod.potions);
+                }
+
+            } catch(Exception e) {
+                e.printStackTrace();
             }
         }
         Collections.sort(this.cards);
@@ -97,7 +102,11 @@ class ExportHelper {
     void exportAllImages() {
         for (ModExportData mod : mods) {
             if (modIncludedInExport(mod)) {
-                mod.exportImages();
+                try {
+                    mod.exportImages();
+                } catch (Exception e) {
+
+                }
             }
         }
     }

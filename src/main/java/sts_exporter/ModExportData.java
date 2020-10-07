@@ -42,7 +42,14 @@ class ModExportData {
     }
 
     public void exportImages() {
-        for (CardExportData x : this.cards) x.exportImages();
+        for (CardExportData x : this.cards) {
+            try {
+                x.exportImages();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+
 //        for (RelicExportData x : this.relics) x.exportImages();
 //        for (CreatureExportData x : this.creatures) x.exportImages();
 //        for (PotionExportData x : this.potions) x.exportImages();
